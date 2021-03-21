@@ -2,16 +2,12 @@ const http = require('http');
 const { inspect } = require('util');
 const Busboy = require('busboy');
 const prism = require('prism-media');
-const fs = require('fs');
-const path = require('path');
 
 
 const PORT = process.env.PORT ?? 3000;
 
 http.createServer((req, res) => {
-  const {
-    method, headers, query = {}, body = {}, params = {},
-  } = req;
+  const { method, headers, query = {}, body = {} } = req;
   if (method === 'POST') {
     const {
       I, integratedLoudness, TP, truePeak, LRA, loudnessRange, f, format, ...opts
