@@ -5,45 +5,44 @@ const prism = require('prism-media');
 const fs = require('fs');
 const path = require('path');
 
+
+const PORT = process.env.PORT ?? 3000;
+
 http.createServer((req, res) => {
   const {
     method, headers, query = {}, body = {}, params = {},
   } = req;
   if (method === 'POST') {
     const {
-      I, integratedLoudness, TP, truePeak, LRA, loudnessRange, f, format,
+      I, integratedLoudness, TP, truePeak, LRA, loudnessRange, f, format, ...opts
     } = { ...query, ...body }; // TODO: rm query if security is paramount
 
-    const i = I ?? integratedLoudness ?? -14;
-    const tp = TP ?? truePeak ?? -3;
-    const lra = LRA ?? loudnessRange ?? 11;
-    console.log(`loudnorm=I=${i}:TP=${tp}:LRA=${lra}:print_format=json`)
+    if (!opts.af) {
+        const i = I ?? integratedLoudness ?? -14;
+        const tp = TP ?? truePeak ?? -3;
+        const lra = LRA ?? loudnessRange ?? 11;
+        opts.af = `loudnorm=I=${i}:TP=${tp}:LRA=${lra}:print_format=json`;
+    }
+    opts.f = f ?? format ?? 'mp3';
 
-    const ffmpeg = new prism.FFmpeg({
-      args: [
-            // '-f', 'fltp',
-            // '-ar', '48000',
-//   '-ac', '2',
-        '-af', `loudnorm=I=${i}:TP=${tp}:LRA=${lra}:print_format=json`,
-        '-f', f ?? format ?? 'mp3',
-      ],
-    });
+    const args = new Set();
+    Object.entries(opts).forEach(([key, val]) => {
+        args.add(`-${key}`);
+        args.add(val);
+    }) ;
+
+    const ffmpeg = new prism.FFmpeg({ args: Array.from(args) });
     const busboy = new Busboy({ headers });
     busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
-      console.log(`File [${fieldname}]: filename: ${filename}, encoding: ${encoding}, mimetype: ${mimetype}`);
+      console.info(`File [${fieldname}]: filename: ${filename}, encoding: ${encoding}, mimetype: ${mimetype}`);
       
-      file.on('data', (data) => console.log(`File [${fieldname}] got ${data.length} bytes`));
-      file.on('end', () => console.log(`File [${fieldname}] Finished`));
+      file.on('data', (data) => console.info(`File [${fieldname}] got ${data.length} bytes`));
+      file.on('end', () => console.info(`File [${fieldname}] Finished`));
 
       file.pipe(ffmpeg).pipe(res);
     });
-    // busboy.on('field', (fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) => {
-    // //   console.log(`Field [${fieldname}]: value: ${inspect(val)}`);
-    // });
-    busboy.on('finish', () => {
-      console.log('Done parsing form!');
-    //   res.writeHead(303, { Connection: 'close', Location: '/' }).end();
-    });
+
+    busboy.on('finish', () => console.info('Done parsing!'));
     req.pipe(busboy);
   } else res.writeHead(405, { Error: 'Unsupported Method' }).end();
-}).listen(3000, () => console.log('Listening on port 3000'));
+}).listen(PORT, () => console.info('Listening on port ', PORT));
