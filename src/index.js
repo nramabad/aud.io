@@ -35,8 +35,7 @@ http.createServer((req, res) => {
       file.on('data', (data) => console.log(`File [${fieldname}] got ${data.length} bytes`));
       file.on('end', () => console.log(`File [${fieldname}] Finished`));
 
-    //   file.pipe(ffmpeg).pipe(res);
-        fs.createReadStream(path.resolve(__dirname, '../test/test.mp3')).pipe(ffmpeg).pipe(res);
+      file.pipe(ffmpeg).pipe(res);
     });
     // busboy.on('field', (fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) => {
     // //   console.log(`Field [${fieldname}]: value: ${inspect(val)}`);
