@@ -6,7 +6,7 @@
   "scripts": {
     "start": "npm run build && npm run serve",
     "dev": "nodemon --exec babel-node ./src/index.js",
-    "devtest": "curl -X POST -H \"Content-Type: multipart/form-data\" -F \"file=@/Users/cramabadran/Desktop/Active/aud.io/test/test.mp3\" -F \"type=audio/mpeg\" 127.0.0.1:3000 >> output.mp3",
+    "sanitycheck": "curl -X POST -H \"Content-Type: multipart/form-data\" -F \"file=@./test/test.mp3\" -F \"type=audio/mpeg\" 127.0.0.1:3000 >> output.mp3",
     "debug": "node --inspect-brk ./dist/index.js",
     "build": "babel src --out-dir ./dist --source-maps",
     "serve": "node ./dist/index.js",
