@@ -20,6 +20,7 @@ export const getFFmpegArgs = ({
   I, integratedLoudness,
   TP, truePeak,
   LRA, loudnessRange,
+  bitRate,
   f, format,
   ...opts
 }) => {
@@ -29,6 +30,7 @@ export const getFFmpegArgs = ({
     const lra = LRA ?? loudnessRange ?? 11;
     opts.af = `loudnorm=I=${i}:TP=${tp}:LRA=${lra}:print_format=json`;
   }
+  if (bitRate && !opts['b:a']) opts['b:a'] = bitRate;
   opts.f = f ?? format ?? 'mp3';
 
   const options = new Set();
