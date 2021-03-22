@@ -5,9 +5,9 @@
   "main": "src/index.js",
   "scripts": {
     "start": "npm run build; npm run serve",
-    "dev": ". devcredentials.sh; nodemon --exec babel-node ./src/index.js",
+    "dev": ". devcredentials.sh; npm run start",
+    "loc": ". devcredentials.sh; nodemon --exec babel-node ./src/index.js",
     "sanitycheck": "curl -X POST -H \"Content-Type: multipart/form-data\" -F \"file=@./test/test.mp3\" -F \"type=audio/mpeg\" 127.0.0.1:3000 >> output.mp3",
-    "debug": "node --inspect-brk ./dist/index.js",
     "build": "babel src --out-dir ./dist --source-maps",
     "serve": "node ./dist/index.js",
     "lint": "eslint",
@@ -34,6 +34,7 @@
     "busboy": "^0.3.1",
     "dotenv": "^8.2.0",
     "ffmpeg-static": "^4.2.8",
+    "loglevel": "^1.7.1",
     "prism-media": "^1.2.9"
   },
   "devDependencies": {
@@ -41,6 +42,7 @@
     "@babel/core": "^7.11.6",
     "@babel/node": "^7.10.5",
     "@babel/preset-env": "^7.11.5",
+    "babel-minify": "^0.5.1",
     "eslint": "^7.22.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-plugin-import": "^2.22.1",
@@ -60,8 +62,7 @@
   },
   "lint-staged": {
     "(src|test)/**/*.js": [
-      "eslint --fix",
-      "mocha --require @babel/register --bail './@(test|src)/**/*.spec.js'"
+      "eslint --fix"
     ]
   },
   "husky": {
@@ -71,5 +72,8 @@
   },
   "directories": {
     "test": "test"
+  },
+  "engines": {
+    "node": "v15.12.0"
   }
 }

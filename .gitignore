@@ -1,2 +1,4 @@
 output*
 devcredentials.sh
+dist/
+node_modules/
