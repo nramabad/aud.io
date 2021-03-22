@@ -4,6 +4,8 @@ const Busboy = require('busboy');
 const prism = require('prism-media');
 const { createGzip, createGunzip} = require('zlib');
 const AWS = require('aws-sdk');
+const { Readable } = require('stream');
+const crypto = require('crypto');
 
 
 AWS.config.update({
@@ -37,37 +39,52 @@ http.createServer((req, res) => {
         options.add(val);
     }) ;
     const args = Array.from(options);
-    const Key = `mpeg${[...args].sort().join('')}.${opts.f}.gz`;
 
-    if (!s3) s3 = new AWS.S3();
-    if (!gunzip) gunzip = createGunzip();
+    const busboy = new Busboy({ headers });
+    const shasum = crypto.createHash('sha256');
 
-    const readFromCache = s3.getObject({ Bucket, Key }).createReadStream();
+    busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
+        console.info(`File [${fieldname}]: filename: ${filename}, encoding: ${encoding}, mimetype: ${mimetype}`);
+        const bufs = [];
 
-    readFromCache.on('error', () => {
-        const ffmpeg = new prism.FFmpeg({ args });
-        const busboy = new Busboy({ headers });
-        busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
-            console.info(`File [${fieldname}]: filename: ${filename}, encoding: ${encoding}, mimetype: ${mimetype}`);
-    
-            file.on('data', (data) => console.info(`File [${fieldname}] got ${data.length} bytes`));
-            file.on('end', () => console.info(`File [${fieldname}] Finished`));
-
-            const processed = file.pipe(ffmpeg)
-
-            if (!gzip) gzip = createGzip();
-            if (!s3) s3 = new AWS.S3();
-            s3.upload(
-                { Bucket, Body: processed.pipe(gzip), Key }, 
-                ex => ex ? console.error(ex) : console.info('Uploaded to S3 Cache Successful'),
-            );
-            processed.pipe(res);
+        file.on('data', (data) => {
+            bufs.push(data);
+            shasum.update(data)
         });
+        file.on('end', () => {
+            console.info(`File [${fieldname}] Finished`)
 
-        busboy.on('finish', () => console.info('Done parsing!'));
-        req.pipe(busboy);
+            const Key = `mpeg${[...args].sort().join('')}${shasum.digest('hex')}.${opts.f}.gz`;
+
+            if (!s3) s3 = new AWS.S3();
+            if (!gunzip) gunzip = createGunzip();
+            console.log(Key)
+
+            const readFromCache = s3.getObject({ Bucket, Key }).createReadStream();
+
+            readFromCache.on('error', () => {
+                const cachedFile = new Readable();
+                cachedFile._read = () => {};
+                const processed = cachedFile.pipe(new prism.FFmpeg({ args }));
+
+                if (!gzip) gzip = createGzip();
+                if (!s3) s3 = new AWS.S3();
+                s3.upload(
+                    { Bucket, Body: processed.pipe(gzip), Key }, 
+                    ex => ex ? console.error(ex) : console.info('Uploaded to S3 Cache Successful'),
+                );
+                processed.pipe(res);
+
+                while (bufs.length) cachedFile.push(bufs.shift());
+                cachedFile.push(null);
+            });
+            readFromCache.on('end', () => console.log('Downloaded from S3 Successful!'))
+
+            readFromCache.pipe(gunzip).pipe(res);
+        });
     });
-    
-    readFromCache.pipe(gunzip).pipe(res);
+
+    busboy.on('finish', () => console.info('Done parsing!'));
+    req.pipe(busboy);
   } else res.writeHead(405, { Error: 'Unsupported Method' }).end();
 }).listen(PORT, () => console.info('Listening on port ', PORT));
