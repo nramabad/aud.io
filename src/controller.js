@@ -28,6 +28,8 @@ const controller = (req, res) => {
 
       file.on('error', logError);
       file.on('data', (data) => {
+        /*  TODO: If audio files will be large (ex. podcasts, voice memos, etc.),
+            add logic to write chunks to local file(s).  */
         bufs.push(data);
         shasum.update(data);
       });
