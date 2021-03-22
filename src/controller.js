@@ -9,6 +9,36 @@ import { getFFmpegArgs, getS3, logError } from './utilities';
 
 const Bucket = 'mpeg-cache';
 
+const computeNewFile = (bufs, args, s3obj, isPresign, res) => () => {
+  const cachedFile = new Readable({ read: () => {} });
+  const processed = cachedFile.pipe(new prism.FFmpeg({ args }));
+
+  processed.on('error', logError);
+  getS3().upload(
+    { ...s3obj, Body: processed.pipe(createGzip()) },
+    (ex) => {
+      if (ex) logError(ex);
+      else {
+        logger.info('Uploaded to S3 Cache Successful');
+        if (isPresign) {
+          getS3().getSignedUrl(
+            'getObject',
+            s3obj,
+            (err, url) => (url
+              ? res.status(200).json({ url })
+              : logError(err)),
+          );
+        }
+      }
+    },
+  );
+
+  processed.pipe(res);
+
+  while (bufs.length) cachedFile.push(bufs.shift());
+  cachedFile.push(null);
+};
+
 /**
  * processFile assists in all logic to stream file from input, return cached value if present
  * perform normalization if not present, insert into cache & return valid output
@@ -33,29 +63,26 @@ const processFile = (args, filetype, isPresign, res, fileStream) => {
     });
     file.on('end', () => {
       const Key = `mpeg${[...args].sort().join('')}${shasum.digest('hex')}.${filetype}.gz`;
+      const s3obj = { Key, Bucket };
 
-      // TODO: logic for presigned url
-      const readFromCache = getS3()
-        .getObject({ Bucket, Key })
-        .createReadStream();
-
-      readFromCache.on('error', () => {
-        const cachedFile = new Readable({ read: () => {} });
-        const processed = cachedFile.pipe(new prism.FFmpeg({ args }));
-
-        processed.on('error', logError);
-        getS3().upload(
-          { Bucket, Body: processed.pipe(createGzip()), Key },
-          (ex) => (ex ? logError(ex) : logger.info('Uploaded to S3 Cache Successful')),
+      if (isPresign) {
+        getS3().getSignedUrl(
+          'getObject',
+          s3obj,
+          (_, url) => (url
+            ? res.status(200).json({ url })
+            : computeNewFile(bufs, args, s3obj, res)),
         );
-        processed.pipe(res);
+      } else {
+        const readFromCache = getS3()
+          .getObject(s3obj)
+          .createReadStream();
 
-        while (bufs.length) cachedFile.push(bufs.shift());
-        cachedFile.push(null);
-      });
-      readFromCache.on('end', () => logger.info('Download from S3 Successful'));
+        readFromCache.on('error', computeNewFile(bufs, args, s3obj, isPresign, res));
+        readFromCache.on('end', () => logger.info('Download from S3 Successful'));
 
-      readFromCache.pipe(createGunzip()).pipe(res);
+        readFromCache.pipe(createGunzip()).pipe(res);
+      }
     });
   };
 
