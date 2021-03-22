@@ -9,6 +9,14 @@ import { getFFmpegArgs, getS3, logError } from './utilities';
 
 const Bucket = 'mpeg-cache';
 
+/**
+ * computeNewFile handles FFmpeg conversion and uploading to S3 cache
+ * @param {} bufs - in-memory cached buffer chunks of input file stream
+ * @param {*} args - ffmpeg arguments
+ * @param {*} s3obj - default s3 configurations / arguments
+ * @param {*} isPresign - boolean to return a presigned S3 URL or file binary itself
+ * @param {*} res - response object / stream
+ */
 const computeNewFile = (bufs, args, s3obj, isPresign, res) => () => {
   const cachedFile = new Readable({ read: () => {} });
   const processed = cachedFile.pipe(new prism.FFmpeg({ args }));
