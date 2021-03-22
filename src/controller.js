@@ -9,6 +9,15 @@ import { getFFmpegArgs, getS3, logError } from './utilities';
 
 const Bucket = 'mpeg-cache';
 
+/**
+ * processFile assists in all logic to stream file from input, return cached value if present
+ * perform normalization if not present, insert into cache & return valid output
+ * @param {} args - ffmpeg arguments
+ * @param {*} filetype - mp3, wav, etc.
+ * @param {*} isPresign - fetch a presigned url or pipe file binary directly
+ * @param {*} res - response object
+ * @param {*} fileStream - file stream (optional)
+ */
 const processFile = (args, filetype, isPresign, res, fileStream) => {
   const shasum = crypto.createHash('sha256');
 
