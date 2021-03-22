@@ -4,8 +4,8 @@
   "description": "Node.js API server based on express project template.",
   "main": "src/index.js",
   "scripts": {
-    "start": "npm run build && npm run serve",
-    "dev": "nodemon --exec babel-node ./src/index.js",
+    "start": "npm run build; npm run serve",
+    "dev": ". devcredentials.sh; nodemon --exec babel-node ./src/index.js",
     "sanitycheck": "curl -X POST -H \"Content-Type: multipart/form-data\" -F \"file=@./test/test.mp3\" -F \"type=audio/mpeg\" 127.0.0.1:3000 >> output.mp3",
     "debug": "node --inspect-brk ./dist/index.js",
     "build": "babel src --out-dir ./dist --source-maps",
@@ -30,6 +30,7 @@
   "repository": "github:nramabad/aud.io",
   "dependencies": {
     "@discordjs/opus": "^0.5.0",
+    "aws-sdk": "^2.868.0",
     "busboy": "^0.3.1",
     "dotenv": "^8.2.0",
     "ffmpeg-static": "^4.2.8",
