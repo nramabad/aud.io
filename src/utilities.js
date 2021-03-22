@@ -17,6 +17,7 @@ export const getS3 = () => {
  * @param {*} param0
  */
 export const getFFmpegArgs = ({
+  input, inputUrl, url,
   I, integratedLoudness,
   TP, truePeak,
   LRA, loudnessRange,
@@ -38,7 +39,10 @@ export const getFFmpegArgs = ({
     options.add(`-${key}`);
     options.add(val);
   });
-  return [Array.from(options), opts.f];
+
+  let downloadUrl = input ?? inputUrl ?? url;
+  if (downloadUrl) downloadUrl = decodeURIComponent(downloadUrl);
+  return [Array.from(options), opts.f, downloadUrl];
 };
 
 /**
