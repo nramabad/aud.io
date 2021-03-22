@@ -13,15 +13,12 @@ AWS.config.update({
 });
 
 let gzip, gunzip, s3;
-const PORT = process.env.PORT ?? 3000;
 const Bucket = 'mpeg-cache';
 
-http.createServer((req, res) => {
-  const { method, headers, query = {}, body = {} } = req;
-  if (method === 'POST') {
+exports.handler = function({ payload = {}, headers }, context, callback) {
     const {
       I, integratedLoudness, TP, truePeak, LRA, loudnessRange, f, format, ...opts
-    } = { ...query, ...body }; // TODO: rm query if security is paramount
+    } = payload; // TODO: rm query if security is paramount
 
     if (!opts.af) {
         const i = I ?? integratedLoudness ?? -14;
@@ -69,5 +66,4 @@ http.createServer((req, res) => {
     });
     
     readFromCache.pipe(gunzip).pipe(res);
-  } else res.writeHead(405, { Error: 'Unsupported Method' }).end();
-}).listen(PORT, () => console.info('Listening on port ', PORT));
+}
