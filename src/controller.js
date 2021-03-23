@@ -18,35 +18,40 @@ const protocols = { http, https };
  * @param {*} res - response object / stream
  * @param {*} s3obj - default s3 configurations / arguments
  */
-const computeNewFile = (res, s3obj) => () => {
-  const { bufs, ffmpegArgs: [args, _, isPresign] } = res.locals;
-  const cachedFile = new Readable({ read: () => {} });
-  const processed = cachedFile.pipe(new prism.FFmpeg({ args }));
+const computeNewFile = (res, s3obj) => {
+  const { bufs, ffmpegArgs: [args,, isPresign] } = res.locals;
 
-  processed.on('error', logError);
-  getS3().upload(
-    { ...s3obj, Body: processed.pipe(createGzip()) },
-    (ex) => {
-      if (ex) logError(ex);
-      else {
-        logger.info('Uploaded to S3 Cache Successful');
-        if (isPresign) {
-          getS3().getSignedUrl(
-            'getObject',
-            s3obj,
-            (err, url) => (url
-              ? jsonRes(res, url)
-              : logError(err)),
-          );
+  const computeNewFileHelper = () => {
+    const cachedFile = new Readable({ read: () => {} });
+    const processed = cachedFile.pipe(new prism.FFmpeg({ args }));
+
+    processed.on('error', logError);
+    getS3().upload(
+      { ...s3obj, Body: processed.pipe(createGzip()) },
+      (ex) => {
+        if (ex) logError(ex);
+        else {
+          logger.info('Uploaded to S3 Cache Successful');
+          if (isPresign) {
+            getS3().getSignedUrl(
+              'getObject',
+              s3obj,
+              (err, url) => (err
+                ? logError(err)
+                : jsonRes(res, url)),
+            );
+          }
         }
-      }
-    },
-  );
+      },
+    );
 
-  processed.pipe(res);
+    if (!isPresign) processed.pipe(res);
 
-  while (bufs.length) cachedFile.push(bufs.shift());
-  cachedFile.push(null);
+    while (bufs.length) cachedFile.push(bufs.shift());
+    cachedFile.push(null);
+  };
+
+  return isPresign ? computeNewFileHelper() : computeNewFileHelper;
 };
 
 /**
@@ -87,10 +92,10 @@ const sendResponse = (body, res) => {
 
   const { bufs, ffmpegArgs, shasum } = res.locals;
   if (!bufs) {
-    if (!Array.isArray(ffmpegArgs) ?? ffmpegArgs.length < 4) {
-      return noInputError(res);
-    }
+    if (!Array.isArray(ffmpegArgs)) return noInputError(res);
     const url = ffmpegArgs.pop();
+    if (!url) return noInputError(res);
+
     return protocols[url.split(':').shift()].get(url, processFile(res, {
       cb: () => sendResponse(body, res),
     }));
@@ -101,23 +106,20 @@ const sendResponse = (body, res) => {
   const s3obj = { Key, Bucket };
 
   if (isPresign) {
-    getS3().getSignedUrl(
-      'getObject',
-      s3obj,
-      (_, url) => (url
-        ? jsonRes(res, url)
-        : computeNewFile(res, s3obj)),
-    );
-  } else {
-    const readFromCache = getS3()
-      .getObject(s3obj)
-      .createReadStream();
-
-    readFromCache.on('error', computeNewFile(res, s3obj));
-    readFromCache.on('end', () => logger.info('Download from S3 Successful'));
-
-    readFromCache.pipe(createGunzip()).pipe(res);
+    return getS3().headObject(s3obj, (err) => (err && err.code === 'NotFound'
+      ? computeNewFile(res, s3obj)
+      : getS3().getSignedUrl('getObject', s3obj, (ex, url) => (ex
+        ? logError(ex)
+        : jsonRes(res, url)))));
   }
+  const readFromCache = getS3()
+    .getObject(s3obj)
+    .createReadStream();
+
+  readFromCache.on('error', computeNewFile(res, s3obj));
+  readFromCache.on('end', () => logger.info('Download from S3 Successful'));
+
+  readFromCache.pipe(createGunzip()).pipe(res);
 };
 
 /**
@@ -128,7 +130,7 @@ const sendResponse = (body, res) => {
 const controller = (req, res) => {
   const { method, headers, url } = req;
   if (url.includes('robots.txt') || url.includes('favicon.ico')) {
-      return res.end('User-agent: *\nDisallow: /');
+    return res.end('User-agent: *\nDisallow: /');
   }
 
   const params = new URLSearchParams(url.split('/').pop()).entries();
