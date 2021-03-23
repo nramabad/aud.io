@@ -2,7 +2,7 @@
 
 ## Design Logic Diagram
 
-![Design Logic Diagram](https://user-images.githubusercontent.com/42252054/112204297-bb7e3100-8bd0-11eb-8974-f09c6f65adc4.png)
+![Design Logic Diagram](https://user-images.githubusercontent.com/42252054/112205930-97bbea80-8bd2-11eb-9417-38c2da56432c.png)
 ## GET https://aud-i0.herokuapp.com
 
 ### Input a download URL and stream out to an output file
