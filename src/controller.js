@@ -1,13 +1,17 @@
 import Busboy from 'busboy';
 import http from 'http';
+import https from 'https';
 import prism from 'prism-media';
 import { Readable } from 'stream';
 import crypto from 'crypto';
 import logger from 'loglevel';
 import { createGzip, createGunzip } from 'zlib';
-import { getFFmpegArgs, getS3, logError } from './utilities';
+import {
+  getFFmpegArgs, getS3, logError, noInputError,
+} from './utilities';
 
 const Bucket = 'mpeg-cache';
+const protocols = { http, https };
 
 /**
  * computeNewFile handles FFmpeg conversion and uploading to S3 cache
@@ -56,45 +60,63 @@ const computeNewFile = (bufs, args, s3obj, isPresign, res) => () => {
  * @param {*} res - response object
  * @param {*} fileStream - file stream (optional)
  */
-const processFile = (args, filetype, isPresign, res, fileStream) => {
-  const shasum = crypto.createHash('sha256');
+const processFile = (res, { file: fileStream, cb }) => {
+  if (!res.locals) res.locals = {};
+  res.locals.shasum = crypto.createHash('sha256');
 
   const processFileHelper = (file) => {
-    const bufs = [];
+    res.locals.bufs = [];
 
     file.on('error', logError);
     file.on('data', (data) => {
       /*  TODO: If audio files will be large (ex. podcasts, voice memos, etc.),
             add logic to write chunks to local file(s).  */
-      bufs.push(data);
-      shasum.update(data);
+      res.locals.bufs.push(data);
+      res.locals.shasum.update(data);
     });
-    file.on('end', () => {
-      const Key = `mpeg${[...args].sort().join('')}${shasum.digest('hex')}.${filetype}.gz`;
-      const s3obj = { Key, Bucket };
-
-      if (isPresign) {
-        getS3().getSignedUrl(
-          'getObject',
-          s3obj,
-          (_, url) => (url
-            ? res.status(200).json({ url })
-            : computeNewFile(bufs, args, s3obj, res)),
-        );
-      } else {
-        const readFromCache = getS3()
-          .getObject(s3obj)
-          .createReadStream();
-
-        readFromCache.on('error', computeNewFile(bufs, args, s3obj, isPresign, res));
-        readFromCache.on('end', () => logger.info('Download from S3 Successful'));
-
-        readFromCache.pipe(createGunzip()).pipe(res);
-      }
-    });
+    file.on('end', cb);
   };
 
   return fileStream ? processFileHelper(fileStream) : processFileHelper;
+};
+
+const sendResponse = (body, res) => {
+  if (!res.locals) res.locals = {};
+  res.locals.ffmpegArgs = getFFmpegArgs(body);
+
+  const { bufs, ffmpegArgs, shasum } = res.locals;
+  if (!bufs) {
+    if (!Array.isArray(ffmpegArgs) || ffmpegArgs.length < 4) {
+      return noInputError(res);
+    }
+    const url = ffmpegArgs.pop();
+    return protocols[url.split(':').shift()].get(url, processFile(res, {
+      cb: () => sendResponse(body, res),
+    }));
+  }
+  const [args, filetype, isPresign] = ffmpegArgs;
+
+  const Key = `mpeg${[...args].sort().join('')}${shasum.digest('hex')}.${filetype}.gz`;
+  const s3obj = { Key, Bucket };
+
+  if (isPresign) {
+    getS3().getSignedUrl(
+      'getObject',
+      s3obj,
+      (_, url) => (url
+        ? res.status(200).json({ url })
+        : computeNewFile(bufs, args, s3obj, res)),
+    );
+  } else {
+    const readFromCache = getS3()
+      .getObject(s3obj)
+      .createReadStream();
+
+    readFromCache.on('error', computeNewFile(bufs, args, s3obj, isPresign, res));
+    readFromCache.on('end', () => logger.info('Download from S3 Successful'));
+
+    readFromCache.pipe(createGunzip()).pipe(res);
+  }
 };
 
 /**
@@ -103,26 +125,30 @@ const processFile = (args, filetype, isPresign, res, fileStream) => {
  * @param {*} res - response stream/object
  */
 const controller = (req, res) => {
-  const {
-    method, headers, query = {}, body = {}, params = {},
-  } = req;
+  const { method, headers } = req;
 
-  if (method !== 'GET' && method !== 'POST') {
+  const params = new URLSearchParams(req.url.split('/').pop()).entries();
+  const body = {};
+
+  for (const [key, val] of params) body[key] = val;
+
+  if (method === 'GET') sendResponse(body, res);
+  else if (method === 'POST') {
+    const busboy = new Busboy({ headers });
+
+    busboy.on('field', (key, val) => {
+      body[key] = val;
+    });
+    busboy.on('file', (_, file) => processFile(res, { file }));
+    busboy.on('error', logError);
+    busboy.on('finish', () => {
+      logger.info('Parsing Complete');
+      sendResponse(body, res);
+    });
+    req.pipe(busboy);
+  } else {
     logger.error('Unsupported Method');
     res.writeHead(405, { Error: 'Unsupported Method' }).end();
-  } else {
-    const [args, filetype, inputUrl] = getFFmpegArgs({ ...params, ...query, ...body });
-    const isPresignedUrl = method === 'GET';
-
-    if (inputUrl) http.get(inputUrl, processFile(args, filetype, isPresignedUrl, res));
-    else {
-      const busboy = new Busboy({ headers });
-
-      busboy.on('file', (_, file) => processFile(args, filetype, isPresignedUrl, res, file));
-      busboy.on('error', logError);
-      busboy.on('finish', () => logger.info('Parsing Complete'));
-      req.pipe(busboy);
-    }
   }
 };
 

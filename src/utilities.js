@@ -23,6 +23,7 @@ export const getFFmpegArgs = ({
   LRA, loudnessRange,
   bitRate,
   f, format,
+  presignRes, presignResponse,
   ...opts
 }) => {
   if (!opts.af) {
@@ -42,7 +43,8 @@ export const getFFmpegArgs = ({
 
   let downloadUrl = input ?? inputUrl ?? url;
   if (downloadUrl) downloadUrl = decodeURIComponent(downloadUrl);
-  return [Array.from(options), opts.f, downloadUrl];
+  const isPresign = presignRes || presignResponse || false;
+  return [Array.from(options), opts.f, isPresign, downloadUrl];
 };
 
 /**
@@ -50,3 +52,7 @@ export const getFFmpegArgs = ({
  * @param {} error - error object or string
  */
 export const logError = (error) => logger.error(typeof error === 'object' && error.message ? error.message : error);
+
+export const noInputError = (res) => res
+  .writeHead(400, { Error: 'File Form Submission or Download Url Required' })
+  .end();
