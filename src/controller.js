@@ -7,7 +7,7 @@ import crypto from 'crypto';
 import logger from 'loglevel';
 import { createGzip, createGunzip } from 'zlib';
 import {
-  getFFmpegArgs, getS3, logError, noInputError,
+  getFFmpegArgs, getS3, logError, noInputError, jsonRes,
 } from './utilities';
 
 const Bucket = 'mpeg-cache';
@@ -15,13 +15,11 @@ const protocols = { http, https };
 
 /**
  * computeNewFile handles FFmpeg conversion and uploading to S3 cache
- * @param {} bufs - in-memory cached buffer chunks of input file stream
- * @param {*} args - ffmpeg arguments
- * @param {*} s3obj - default s3 configurations / arguments
- * @param {*} isPresign - boolean to return a presigned S3 URL or file binary itself
  * @param {*} res - response object / stream
+ * @param {*} s3obj - default s3 configurations / arguments
  */
-const computeNewFile = (bufs, args, s3obj, isPresign, res) => () => {
+const computeNewFile = (res, s3obj) => () => {
+  const { bufs, ffmpegArgs: [args, _, isPresign] } = res.locals;
   const cachedFile = new Readable({ read: () => {} });
   const processed = cachedFile.pipe(new prism.FFmpeg({ args }));
 
@@ -37,7 +35,7 @@ const computeNewFile = (bufs, args, s3obj, isPresign, res) => () => {
             'getObject',
             s3obj,
             (err, url) => (url
-              ? res.status(200).json({ url })
+              ? jsonRes(res, url)
               : logError(err)),
           );
         }
@@ -54,11 +52,9 @@ const computeNewFile = (bufs, args, s3obj, isPresign, res) => () => {
 /**
  * processFile assists in all logic to stream file from input, return cached value if present
  * perform normalization if not present, insert into cache & return valid output
- * @param {} args - ffmpeg arguments
- * @param {*} filetype - mp3, wav, etc.
- * @param {*} isPresign - fetch a presigned url or pipe file binary directly
  * @param {*} res - response object
  * @param {*} fileStream - file stream (optional)
+ * @param {*} cb - optional callback to execute on file processing end
  */
 const processFile = (res, { file: fileStream, cb }) => {
   if (!res.locals) res.locals = {};
@@ -74,19 +70,24 @@ const processFile = (res, { file: fileStream, cb }) => {
       res.locals.bufs.push(data);
       res.locals.shasum.update(data);
     });
-    file.on('end', cb);
+    if (cb) file.on('end', cb);
   };
 
   return fileStream ? processFileHelper(fileStream) : processFileHelper;
 };
 
+/**
+ * sendResponse handles all logic to take body/params and send a response
+ * @param {*} body - params / query / body args
+ * @param {*} res - node.js response object / stream
+ */
 const sendResponse = (body, res) => {
   if (!res.locals) res.locals = {};
   res.locals.ffmpegArgs = getFFmpegArgs(body);
 
   const { bufs, ffmpegArgs, shasum } = res.locals;
   if (!bufs) {
-    if (!Array.isArray(ffmpegArgs) || ffmpegArgs.length < 4) {
+    if (!Array.isArray(ffmpegArgs) ?? ffmpegArgs.length < 4) {
       return noInputError(res);
     }
     const url = ffmpegArgs.pop();
@@ -104,15 +105,15 @@ const sendResponse = (body, res) => {
       'getObject',
       s3obj,
       (_, url) => (url
-        ? res.status(200).json({ url })
-        : computeNewFile(bufs, args, s3obj, res)),
+        ? jsonRes(res, url)
+        : computeNewFile(res, s3obj)),
     );
   } else {
     const readFromCache = getS3()
       .getObject(s3obj)
       .createReadStream();
 
-    readFromCache.on('error', computeNewFile(bufs, args, s3obj, isPresign, res));
+    readFromCache.on('error', computeNewFile(res, s3obj));
     readFromCache.on('end', () => logger.info('Download from S3 Successful'));
 
     readFromCache.pipe(createGunzip()).pipe(res);
@@ -125,9 +126,12 @@ const sendResponse = (body, res) => {
  * @param {*} res - response stream/object
  */
 const controller = (req, res) => {
-  const { method, headers } = req;
+  const { method, headers, url } = req;
+  if (url.includes('robots.txt') || url.includes('favicon.ico')) {
+      return res.end('User-agent: *\nDisallow: /');
+  }
 
-  const params = new URLSearchParams(req.url.split('/').pop()).entries();
+  const params = new URLSearchParams(url.split('/').pop()).entries();
   const body = {};
 
   for (const [key, val] of params) body[key] = val;

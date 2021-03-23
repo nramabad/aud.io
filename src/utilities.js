@@ -43,7 +43,7 @@ export const getFFmpegArgs = ({
 
   let downloadUrl = input ?? inputUrl ?? url;
   if (downloadUrl) downloadUrl = decodeURIComponent(downloadUrl);
-  const isPresign = presignRes || presignResponse || false;
+  const isPresign = (presignRes ?? presignResponse) === 'true' || false;
   return [Array.from(options), opts.f, isPresign, downloadUrl];
 };
 
@@ -53,6 +53,19 @@ export const getFFmpegArgs = ({
  */
 export const logError = (error) => logger.error(typeof error === 'object' && error.message ? error.message : error);
 
+/**
+ * return an erro that client needs to provide an input
+ * @param {*} res - response object
+ */
 export const noInputError = (res) => res
-  .writeHead(400, { Error: 'File Form Submission or Download Url Required' })
-  .end();
+    .writeHead(400)
+    .end(JSON.stringify({ Error: 'File Form Submission or Download Url Required' }));
+
+/**
+ * return a json response for presigned url
+ * @param {*} res - response object / stream
+ * @param {*} url - presigned url
+ */
+export const jsonRes = (res, url) => res.setHeader('Content-Type', 'application/json')
+    .writeHead(200)
+    .end(JSON.stringify({ url }));
