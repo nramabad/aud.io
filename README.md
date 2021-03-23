@@ -1,6 +1,6 @@
 # aud.io
 
-![Design Logic Diagram](https://user-images.githubusercontent.com/42252054/112203090-60980a00-8bcf-11eb-8dbd-6b6c8ff5e195.png)
+![Design Logic Diagram](https://user-images.githubusercontent.com/42252054/112203463-cb494580-8bcf-11eb-96c6-713dd765de06.png)
 
 ## GET https://aud-i0.herokuapp.com
 
