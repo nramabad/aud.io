@@ -1,5 +1,7 @@
 # aud.io
 
+![Design Logic Diagram](https://user-images.githubusercontent.com/42252054/112203090-60980a00-8bcf-11eb-8dbd-6b6c8ff5e195.png)
+
 ## GET https://aud-i0.herokuapp.com
 
 ### Input a download URL and stream out to an output file
