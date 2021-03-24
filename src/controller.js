@@ -154,7 +154,7 @@ const controller = (req, res) => {
     req.pipe(busboy);
   } else {
     logger.error('Unsupported Method');
-    res.writeHead(405, { Error: 'Unsupported Method' }).end();
+    res.writeHead(405).end(JSON.stringify({ Error: 'Unsupported Method' }));
   }
 };
 
