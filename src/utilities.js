@@ -37,9 +37,10 @@ export const getFFmpegArgs = ({
 
   const options = new Set();
   Object.entries(opts).forEach(([key, val]) => {
-    if (options.has(`-${key}`)) logger.warn(`Multiple arguments for key -${key}`);
+    const k = `-${key}`;
+    if (options.has(k)) logger.warn(`Multiple arguments for key ${k}`);
     else {
-      options.add(`-${key}`);
+      options.add(k);
       options.add(val);
     }
   });
