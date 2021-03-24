@@ -44,7 +44,7 @@ All arguments accepted via query, params or body data. The following FFmpeg opti
   
 `input`/`inputUrl`/`url` - Input download URL for audio file (REQUIRED if no file streamed as form POST data)  
 `I`/`integratedLoudness` - Integrated Loudness (default: -14)  
-`TP`/`truePeak` - Inter sample peak (default: -3)  
+`TP`/`truePeak` - Inter-sample peak (default: -3)  
 `LRA`/`loudnessRange` - Loudness Range from softest to loudest (default: 11)  
 `af` - audio filter (optional / default: `loudnorm=I=${i}:TP=${tp}:LRA=${lra}:print_format=json`)  
 `bitRate` - Audio Bit Rate (bits per unit time) (optional)  
