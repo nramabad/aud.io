@@ -88,7 +88,7 @@ const processFile = (res, { file: fileStream, cb }) => {
  */
 const sendResponse = (body, res) => {
   if (!res.locals) res.locals = {};
-  res.locals.ffmpegArgs = getFFmpegArgs(body);
+  if (!res.locals.ffmpegArgs) res.locals.ffmpegArgs = getFFmpegArgs(body);
 
   const { bufs, ffmpegArgs, shasum } = res.locals;
   if (!bufs) {
