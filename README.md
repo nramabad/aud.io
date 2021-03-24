@@ -53,7 +53,7 @@ All arguments accepted via query, params or body data. The following FFmpeg opti
 _Defaults based on normalization required for Amazon Alexa:_  
 https://developer.amazon.com/en-US/docs/alexa/flashbriefing/normalizing-the-loudness-of-audio-content.html#additional-tools  
 _Other FFmpeg options are implicitly supported by their key name as documented here:_  
-https://ffmpeg.org/ffmpeg.html#Generic-options
+https://ffmpeg.org/ffmpeg.html#toc-Options
 
 ## Technologies
 
