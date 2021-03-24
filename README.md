@@ -38,7 +38,7 @@ curl -X POST -H "Content-Type: multipart/form-data" -F "url=https://www.bensound
 ```
 curl -X POST -H "Content-Type: multipart/form-data" -F "url=https://www.bensound.com/bensound-music/bensound-hey.mp3" -F "presignRes=true" https://aud-i0.herokuapp.com
 ```
-## Options/Arguments
+## Options / Arguments
 
 All arguments accepted via query, params or body data. The following FFmpeg options are supported explicitly with equivalent plain-text key names:  
   
