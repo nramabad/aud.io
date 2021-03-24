@@ -46,7 +46,7 @@ All arguments accepted via query, params or body data. The following FFmpeg opti
 `I`/`integratedLoudness` - Integrated Loudness (default: -14)  
 `TP`/`truePeak` - Inter sample peak (default: -3)  
 `LRA`/`loudnessRange` - Loudness Range from softest to loudest (default: 11)  
-`af` - audio filter (optional / default: `loudnorm=I=${i}:TP=${tp}:LRA=${lra}:print_format=json`)
+`af` - audio filter (optional / default: `loudnorm=I=${i}:TP=${tp}:LRA=${lra}:print_format=json`)  
 `bitRate` - Audio Bit Rate (bits per unit time) (optional)  
 `presignRes`/`presignResponse` - returns pre-signed S3 download URL if equal to true (default: false - streams file to response)
 
