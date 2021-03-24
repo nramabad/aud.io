@@ -37,8 +37,11 @@ export const getFFmpegArgs = ({
 
   const options = new Set();
   Object.entries(opts).forEach(([key, val]) => {
-    options.add(`-${key}`);
-    options.add(val);
+    if (options.has(`-${key}`)) logger.warn(`Multiple arguments for key -${key}`);
+    else {
+      options.add(`-${key}`);
+      options.add(val);
+    }
   });
 
   let downloadUrl = input ?? inputUrl ?? url;
