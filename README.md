@@ -38,6 +38,15 @@ curl -X POST -H "Content-Type: multipart/form-data" -F "url=https://www.bensound
 ```
 curl -X POST -H "Content-Type: multipart/form-data" -F "url=https://www.bensound.com/bensound-music/bensound-hey.mp3" -F "presignRes=true" https://aud-i0.herokuapp.com
 ```
+## Options/Arguments
+
+`input`/`inputUrl`/`url` - Input download URL for audio file (REQUIRED if no file streamed as form POST data)
+`I`/`integratedLoudness` - Integrated Loudness (default: -14)
+`TP`/`truePeak` - Inter sample peak (default: -3)
+`LRA`/`loudnessRange` - Loudness Range from softest to loudest (default: 11)
+`bitRate` - Audio Bit Rate (bits per unit time) (optional)
+`presignRes`/`presignResponse` - returns pre-signed S3 download URL if equal to true (default: false - streams file to response)
+
 ## Technologies
 
 _Node.JS (HTTP/HTTPS, crypto, stream, zlib), Heroku, AWS S3, FFmpeg_
