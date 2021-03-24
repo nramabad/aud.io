@@ -31,12 +31,12 @@ curl -X POST -H "Content-Type: multipart/form-data" -F "file=@./audio.mp3" -F "t
 
 ### Input a download URL and stream out to an output file
 ```
-curl -X POST -H "Content-Type: multipart/form-data" -F "url=https%3A%2F%2Fwww.bensound.com%2Fbensound-music%2Fbensound-slowmotion.mp3" https://aud-i0.herokuapp.com >> normalized_audio.mp3
+curl -X POST -H "Content-Type: multipart/form-data" -F "url=https://www.bensound.com/bensound-music/bensound-hey.mp3" https://aud-i0.herokuapp.com >> normalized_audio.mp3
 ```
 
 ### Input a download URL and receive a JSON w/ a presigned URL to download from S3
 ```
-curl -X POST -H "Content-Type: multipart/form-data" -F "url=https%3A%2F%2Fwww.bensound.com%2Fbensound-music%2Fbensound-slowmotion.mp3" -F "presignRes=true" https://aud-i0.herokuapp.com
+curl -X POST -H "Content-Type: multipart/form-data" -F "url=https://www.bensound.com/bensound-music/bensound-hey.mp3" -F "presignRes=true" https://aud-i0.herokuapp.com
 ```
 ## Technologies
 
