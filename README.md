@@ -49,7 +49,7 @@ All arguments accepted via query, params or body data. The following FFmpeg opti
 `bitRate` - Audio Bit Rate (bits per unit time) (optional)  
 `presignRes`/`presignResponse` - returns pre-signed S3 download URL if equal to true (default: false - streams file to response)
 
-Other options supported by FFmpeg are implicitly supported by their key name as documented here: https://ffmpeg.org/ffmpeg.html#Generic-options
+Other FFmpeg options are implicitly supported by their key name as documented here: https://ffmpeg.org/ffmpeg.html#Generic-options
 
 ## Technologies
 
