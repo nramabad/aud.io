@@ -1,6 +1,6 @@
 # aud.io
 
-_Run FFmpeg jobs on demand with aud.io!_ This project implements a plain Node.JS HTTP server hosted on Heroku Dynos. It accepts audio media in the form of download links or file streamed POSTed as a part of multipart form data (making it a convenient plugin API for frontend and backends alike). Response can be accepted as a JSON with a download URL or a file stream. Download URLs are provided courtesy a presigned AWS S3 file URL with default expiration. All requests are GZIP compressed and cached in S3, and all download URLs responses are GZIP compressed. The minimal NPM dependencies allows this project to be fast and relatively portable.
+**_Run FFmpeg jobs on demand with aud.io!_** This project implements a plain Node.JS HTTP server hosted on Heroku Dynos. It accepts audio media in the form of download links or file streamed POSTed as a part of multipart form data (making it a convenient plugin API for frontend and backends alike). Response can be accepted as a JSON with a download URL or a file stream. Download URLs are provided courtesy a presigned AWS S3 file URL with default expiration. All requests are GZIP compressed and cached in S3, and all download URLs responses are GZIP compressed. The minimal NPM dependencies allows this project to be fast and relatively portable.
 
 ## Design Logic Diagram
 
