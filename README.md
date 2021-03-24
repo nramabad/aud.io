@@ -50,6 +50,7 @@ All arguments accepted via query, params or body data. The following FFmpeg opti
 `bitRate` - Audio Bit Rate (bits per unit time) (optional)  
 `presignRes`/`presignResponse` - returns pre-signed S3 download URL if equal to true (default: false - streams file to response)
 
+Defaults based on normalization required for Amazon Alexa: https://developer.amazon.com/en-US/docs/alexa/flashbriefing/normalizing-the-loudness-of-audio-content.html#additional-tools  
 Other FFmpeg options are implicitly supported by their key name as documented here: https://ffmpeg.org/ffmpeg.html#Generic-options
 
 ## Technologies
