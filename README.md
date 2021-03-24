@@ -40,8 +40,8 @@ curl -X POST -H "Content-Type: multipart/form-data" -F "url=https%3A%2F%2Fwww.be
 ```
 ## Technologies
 
-Node.JS (HTTP/HTTPS, crypto, stream, zlib), Heroku, AWS S3, FFmpeg
+_Node.JS (HTTP/HTTPS, crypto, stream, zlib), Heroku, AWS S3, FFmpeg_
 
 ## Dependencies
 
-aws-sdk, busboy, @discordjs/opus, ffmpeg-static, loglevel, prism-media
+_aws-sdk, busboy, @discordjs/opus, ffmpeg-static, loglevel, prism-media_
