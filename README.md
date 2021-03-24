@@ -40,14 +40,16 @@ curl -X POST -H "Content-Type: multipart/form-data" -F "url=https://www.bensound
 ```
 ## Options/Arguments
 
-All arguments accepted via query, params or body data.  
+All arguments accepted via query, params or body data. The following FFmpeg options are supported explicitly with equivalent plain-text key names:  
   
 `input`/`inputUrl`/`url` - Input download URL for audio file (REQUIRED if no file streamed as form POST data)  
 `I`/`integratedLoudness` - Integrated Loudness (default: -14)  
 `TP`/`truePeak` - Inter sample peak (default: -3)  
 `LRA`/`loudnessRange` - Loudness Range from softest to loudest (default: 11)  
 `bitRate` - Audio Bit Rate (bits per unit time) (optional)  
-`presignRes`/`presignResponse` - returns pre-signed S3 download URL if equal to true (default: false - streams file to response)  
+`presignRes`/`presignResponse` - returns pre-signed S3 download URL if equal to true (default: false - streams file to response)
+
+Other options supported by FFmpeg are implicitly supported by their key name as documented here: https://ffmpeg.org/ffmpeg.html#Generic-options
 
 ## Technologies
 
