@@ -38,3 +38,10 @@ curl -X POST -H "Content-Type: multipart/form-data" -F "url=https%3A%2F%2Fwww.be
 ```
 curl -X POST -H "Content-Type: multipart/form-data" -F "url=https%3A%2F%2Fwww.bensound.com%2Fbensound-music%2Fbensound-slowmotion.mp3" -F "presignRes=true" https://aud-i0.herokuapp.com
 ```
+## Technologies
+
+Node.JS (HTTP/HTTPS, crypto, stream, zlib), Heroku, AWS S3, FFmpeg
+
+## Dependencies
+
+aws-sdk, busboy, @discordjs/opus, ffmpeg-static, loglevel, prism-media
